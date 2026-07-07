@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct WT2026App: App {
@@ -13,5 +14,8 @@ struct WT2026App: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(
+            for: CodigoPostal.self
+        )
     }
 }
