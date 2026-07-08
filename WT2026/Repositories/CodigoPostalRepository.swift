@@ -51,9 +51,9 @@ final class CodigoPostalRepository {
         context: ModelContext
     ) throws -> [CodigoPostal] {
         
-        let searchText = text.textSearch
         
-        guard !searchText.isEmpty else {
+        switch SearchType.analyze(text) {
+        case .empty:
             
             let descriptor = FetchDescriptor<CodigoPostal>(
                 sortBy: [
@@ -63,18 +63,22 @@ final class CodigoPostalRepository {
             )
             
             return try context.fetch(descriptor)
+            
+        case .code(let codeSearch):
+            
+            return try searchByCode(codeSearch, context: context)
+            
+        case .local(let localSearch):
+            
+            return try searchByLocal(localSearch, context: context)
+            
+        case .composed(let searchTerms):
+
+            return try searchByComposed(searchTerms, context: context)
+            
         }
         
-        if searchText.first?.isNumber == true {
-            
-            return try searchByCode(searchText, context: context)
-            
-        }
         
-        return try searchByLocal(
-            searchText,
-            context: context
-        )
     }
     
     private func searchByCode(
@@ -124,5 +128,33 @@ final class CodigoPostalRepository {
         )
         
         return try context.fetch(descriptor)
+    }
+    
+    private func searchByComposed(
+        _ searchArray: [String],
+        context: ModelContext
+    ) throws -> [CodigoPostal] {
+        
+        let descriptor = FetchDescriptor<CodigoPostal>()
+        
+        let all = try context.fetch(descriptor)
+        
+        return all.filter { item in
+            
+            let complete = item.codNoSeparator.textSearch
+            let local = item.desigPostal.textSearch
+            
+            return searchArray.allSatisfy { t in
+                
+                let searchTerm = t.textSearch
+                
+                if searchTerm.first?.isNumber == true {
+                    return complete.contains(searchTerm)
+                } else {
+                    return local.contains(searchTerm)
+                }
+                
+            }
+        }
     }
 }
