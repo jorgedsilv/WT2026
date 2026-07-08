@@ -53,6 +53,34 @@ final class CodigoPostalRepository {
         
         let searchText = text.textSearch
         
+        guard !searchText.isEmpty else {
+            
+            let descriptor = FetchDescriptor<CodigoPostal>(
+                sortBy: [
+                    SortDescriptor(\.numCodPostal),
+                    SortDescriptor(\.extCodPostal)
+                ]
+            )
+            
+            return try context.fetch(descriptor)
+        }
+        
+        if searchText.first?.isNumber == true {
+            
+            return try searchByCode(searchText, context: context)
+            
+        }
+        
+        return []
+    }
+    
+    private func searchByCode(
+        _ searchText: String,
+        context: ModelContext
+    ) throws -> [CodigoPostal] {
+        
+        let searchCode = searchText.textSearch
+        
         let descriptor = FetchDescriptor<CodigoPostal>(
             sortBy: [
                 SortDescriptor(\.numCodPostal),
@@ -62,24 +90,16 @@ final class CodigoPostalRepository {
         
         let all = try context.fetch(descriptor)
         
-        guard !searchText.isEmpty else {
-            return all
-        }
-        
-        return all.filter { code in
+        return all.filter { item in
             
-            let codeComplete = code.codNoSeparator.textSearch
-            
-            let local = code.desigPostal.textSearch
+            let complete = item.codNoSeparator
             
             return
-                code.numCodPostal.hasPrefix(searchText)
+                item.numCodPostal.hasPrefix(searchCode)
                 ||
-                code.extCodPostal.hasPrefix(searchText)
+                item.extCodPostal.hasPrefix(searchCode)
                 ||
-                codeComplete.contains(searchText)
-                ||
-                local.contains(searchText)
+                complete.hasPrefix(searchCode)
         }
     }
 }
