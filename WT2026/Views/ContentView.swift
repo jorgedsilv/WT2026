@@ -41,7 +41,7 @@ struct ContentView: View {
                         VStack(alignment: .leading) {
                             
                             HStack {
-                                Text(code.codigoCompleto)
+                                Text(code.codComplete)
                                     .font(.headline)
                                 
                                 Text(code.desigPostal)

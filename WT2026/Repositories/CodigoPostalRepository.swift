@@ -51,33 +51,35 @@ final class CodigoPostalRepository {
         context: ModelContext
     ) throws -> [CodigoPostal] {
         
-        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if text.isEmpty {
-            
-            let descriptor = FetchDescriptor<CodigoPostal>(
-                sortBy: [
-                    SortDescriptor(\.numCodPostal)
-                ]
-            )
-            
-            return try context.fetch(descriptor)
-        }
-        
-        let predicate = #Predicate<CodigoPostal> {
-            
-            $0.numCodPostal.localizedStandardContains(text)
-            ||
-            $0.desigPostal.localizedStandardContains(text)
-        }
+        let searchText = text.textSearch
         
         let descriptor = FetchDescriptor<CodigoPostal>(
-            predicate: predicate,
             sortBy: [
-                SortDescriptor(\.numCodPostal)
+                SortDescriptor(\.numCodPostal),
+                SortDescriptor(\.extCodPostal)
             ]
         )
         
-        return try context.fetch(descriptor)
+        let all = try context.fetch(descriptor)
+        
+        guard !searchText.isEmpty else {
+            return all
+        }
+        
+        return all.filter { code in
+            
+            let codeComplete = code.codNoSeparator.textSearch
+            
+            let local = code.desigPostal.textSearch
+            
+            return
+                code.numCodPostal.hasPrefix(searchText)
+                ||
+                code.extCodPostal.hasPrefix(searchText)
+                ||
+                codeComplete.contains(searchText)
+                ||
+                local.contains(searchText)
+        }
     }
 }

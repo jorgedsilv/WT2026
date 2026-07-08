@@ -18,8 +18,16 @@ final class CodigoPostal {
     var extCodPostal: String
     var desigPostal: String
     
-    var codigoCompleto: String {
+    var codComplete: String {
         "\(numCodPostal)-\(extCodPostal)"
+    }
+    
+    var codNoSeparator: String {
+        "\(numCodPostal)\(extCodPostal)"
+    }
+    
+    var descricaoCompleta: String {
+        "\(codComplete) \(desigPostal)"
     }
     
     init(
