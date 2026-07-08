@@ -13,7 +13,7 @@ import SwiftData
 @MainActor
 final class CodigoPostalViewModel {
     
-    private let repository = CodigoPostalRepository()
+    private var repository: CodigoPostalRepository!
     
     //var state: State = .idle
     
@@ -26,12 +26,20 @@ final class CodigoPostalViewModel {
     /* loading */
     var isImporting = false
 
+    // MARK: - Repository -
+    
+    func configure(
+        context: ModelContext
+    ) {
+        
+        if repository == nil {
+            repository = CodigoPostalRepository(context: context)
+        }
+    }
     
     // MARK: - Import -
     
-    func importFromDatabase(
-        context: ModelContext
-    ) async {
+    func importFromDatabase() async {
         
         guard !isImporting
         else {
@@ -48,11 +56,9 @@ final class CodigoPostalViewModel {
         
         do {
             
-            try await repository.importIfNeeded(
-                context: context
-            )
+            try await repository.importIfNeeded()
             
-            try searchFromDatabase(context: context)
+            try searchFromDatabase()
             
         } catch {
             
@@ -62,14 +68,8 @@ final class CodigoPostalViewModel {
     
     // MARK: - Search -
     
-    func searchFromDatabase(
-        context: ModelContext
-    ) throws {
-        
-        results = try repository.search(
-            text: search,
-            context: context
-        )
+    func searchFromDatabase() throws {
+        results = try repository.search(text: search)
     }
 }
 

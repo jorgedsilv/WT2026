@@ -11,12 +11,31 @@ import SwiftData
 @MainActor
 final class CodigoPostalRepository {
     
+    private let context: ModelContext
+    
     private let importer = CSVImporter()
     private let importedKey = "CSVImported"
     
+    // MARK: - Sorts -
+    
+    private let defaultSort: [SortDescriptor<CodigoPostal>] = [
+        SortDescriptor(\.numCodPostal),
+        SortDescriptor(\.extCodPostal)
+    ]
+    
+    private let localSort: [SortDescriptor<CodigoPostal>] = [
+        SortDescriptor(\.desigPostal),
+        SortDescriptor(\.numCodPostal),
+        SortDescriptor(\.extCodPostal)
+    ]
+    
+    init(context: ModelContext) {
+        self.context = context
+    }
+    
     // MARK: - Import -
     
-    func importIfNeeded(context: ModelContext) async throws {
+    func importIfNeeded() async throws {
         
         guard !UserDefaults.standard.bool(forKey: importedKey) else {
             return
@@ -46,56 +65,34 @@ final class CodigoPostalRepository {
     
     // MARK: - Search -
     
-    func search(
-        text: String,
-        context: ModelContext
-    ) throws -> [CodigoPostal] {
-        
+    func search(text: String) throws -> [CodigoPostal] {
         
         switch SearchType.analyze(text) {
         case .empty:
             
-            let descriptor = FetchDescriptor<CodigoPostal>(
-                sortBy: [
-                    SortDescriptor(\.numCodPostal),
-                    SortDescriptor(\.extCodPostal)
-                ]
-            )
-            
-            return try context.fetch(descriptor)
+            return try fetchAll()
             
         case .code(let codeSearch):
             
-            return try searchByCode(codeSearch, context: context)
+            return try searchByCode(codeSearch)
             
         case .local(let localSearch):
             
-            return try searchByLocal(localSearch, context: context)
+            return try searchByLocal(localSearch)
             
         case .composed(let searchTerms):
 
-            return try searchByComposed(searchTerms, context: context)
+            return try searchByComposed(searchTerms)
             
         }
         
-        
     }
     
-    private func searchByCode(
-        _ searchText: String,
-        context: ModelContext
-    ) throws -> [CodigoPostal] {
+    private func searchByCode(_ searchText: String) throws -> [CodigoPostal] {
         
         let searchCode = searchText.textSearch
         
-        let descriptor = FetchDescriptor<CodigoPostal>(
-            sortBy: [
-                SortDescriptor(\.numCodPostal),
-                SortDescriptor(\.extCodPostal)
-            ]
-        )
-        
-        let all = try context.fetch(descriptor)
+        let all = try fetchAll()
         
         return all.filter { item in
             
@@ -110,34 +107,19 @@ final class CodigoPostalRepository {
         }
     }
     
-    private func searchByLocal(
-        _ searchText: String,
-        context: ModelContext
-    ) throws -> [CodigoPostal] {
+    private func searchByLocal(_ searchText: String) throws -> [CodigoPostal] {
         
-        let descriptor = FetchDescriptor<CodigoPostal>(
-            predicate: #Predicate {
-                
+        return try fetch(
+            predicate: #Predicate<CodigoPostal> {
                 $0.desigPostal.localizedStandardContains(searchText)
-                
             },
-            sortBy: [
-                SortDescriptor(\.desigPostal),
-                SortDescriptor(\.numCodPostal)
-            ]
+            sort: localSort
         )
-        
-        return try context.fetch(descriptor)
     }
     
-    private func searchByComposed(
-        _ searchArray: [String],
-        context: ModelContext
-    ) throws -> [CodigoPostal] {
+    private func searchByComposed(_ searchArray: [String]) throws -> [CodigoPostal] {
         
-        let descriptor = FetchDescriptor<CodigoPostal>()
-        
-        let all = try context.fetch(descriptor)
+        let all = try fetchAll()
         
         return all.filter { item in
             
@@ -156,5 +138,24 @@ final class CodigoPostalRepository {
                 
             }
         }
+    }
+    
+    // MARK: - Fetch -
+    
+    private func fetch(
+        predicate: Predicate<CodigoPostal>? = nil,
+        sort: [SortDescriptor<CodigoPostal>]? = nil
+    ) throws -> [CodigoPostal] {
+        
+        let descriptor = FetchDescriptor<CodigoPostal>(
+            predicate: predicate,
+            sortBy: sort ?? defaultSort
+        )
+        
+        return try context.fetch(descriptor)
+    }
+    
+    private func fetchAll() throws -> [CodigoPostal] {
+        try fetch()
     }
 }

@@ -78,14 +78,17 @@ struct ContentView: View {
         .onChange(of: vm.search) {
             
             do {
-                try vm.searchFromDatabase(context: context)
+                try vm.searchFromDatabase()
             } catch {
                 print("Erro na pesquisa")
                 print(error)
             }
         }
         .task {
-            await vm.importFromDatabase(context: context)
+            
+            vm.configure(context: context)
+            
+            await vm.importFromDatabase()
         }
     }
 }
