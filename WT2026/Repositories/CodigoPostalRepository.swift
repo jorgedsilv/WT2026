@@ -71,7 +71,10 @@ final class CodigoPostalRepository {
             
         }
         
-        return []
+        return try searchByLocal(
+            searchText,
+            context: context
+        )
     }
     
     private func searchByCode(
@@ -101,5 +104,25 @@ final class CodigoPostalRepository {
                 ||
                 complete.hasPrefix(searchCode)
         }
+    }
+    
+    private func searchByLocal(
+        _ searchText: String,
+        context: ModelContext
+    ) throws -> [CodigoPostal] {
+        
+        let descriptor = FetchDescriptor<CodigoPostal>(
+            predicate: #Predicate {
+                
+                $0.desigPostal.localizedStandardContains(searchText)
+                
+            },
+            sortBy: [
+                SortDescriptor(\.desigPostal),
+                SortDescriptor(\.numCodPostal)
+            ]
+        )
+        
+        return try context.fetch(descriptor)
     }
 }
