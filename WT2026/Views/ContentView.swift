@@ -23,54 +23,82 @@ struct ContentView: View {
             
             Group {
                 
-                if vm.isImporting {
-                    ProgressView("A importar códigos postais...")
-                } else if vm.results.isEmpty {
+                switch vm.viewState {
+                case .idle,
+                .preparing,
+                .importing,
+                .loading:
                     
-                    ContentUnavailableView {
-                        Label("Sem códigos postais", systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text("Ainda não existem códigos postais disponíveis.")
+                    VStack(spacing: 20) {
+                        
+                        Image(systemName: vm.viewState.symbol)
+                            .font(.largeTitle)
+                        
+                        ProgressView()
+                        
+                        Text(vm.viewState.title)
+                            .foregroundStyle(.secondary)
                     }
                     
-                } else {
+                case .loaded:
                     
-                    List(vm.results) { code in
+                    if vm.results.isEmpty {
                         
-                    
-                        VStack(alignment: .leading) {
+                        ContentUnavailableView.search(
+                            text: vm.search
+                        )
+                        
+                    } else {
+                        
+                        List(vm.results) { code in
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                
+                                HStack {
+                                    
+                                    Text(code.codComplete)
+                                        .font(.headline)
+                                    
+                                    Text(code.desigPostal)
+                                        .foregroundStyle(.secondary)
+                                    
+                                }
+                                
+                            }
+                            
+                        }
+                        .safeAreaInset(edge: .top) {
                             
                             HStack {
-                                Text(code.codComplete)
-                                    .font(.headline)
                                 
-                                Text(code.desigPostal)
-                                    .foregroundStyle(.secondary)
-
+                                if vm.search.isEmpty {
+                                    Text("\(vm.results.count) códigos postais")
+                                } else {
+                                    Text("\(vm.results.count) resultados")
+                                }
+                                
                             }
+                            .font(.footnote)
+                            .padding(.horizontal)
+                            .padding(.vertical, 3)
                             
                         }
-                    }
-                    .safeAreaInset(edge: .top) {
-                        
-                        HStack {
-                            
-                            if vm.search.isEmpty {
-                                Text("\(vm.results.count) códigos postais")
-                            } else {
-                                Text("\(vm.results.count) resultados")
-                            }
-                            
-                        }
-                        .font(.footnote)
-                        .padding(.horizontal)
-                        .padding(.vertical, 3)
                         
                     }
+                    
+                case .error(let message):
+                    
+                    ContentUnavailableView {
+                        Label(
+                            "Erro",
+                            systemImage: "xmark.circle"
+                        )
+                    } description: {
+                        Text(message)
+                    }
+                    
                 }
-                
             }
-            
         }
         .searchable(text: $vm.search, prompt: "Pesquisa um código postal")
         .autocorrectionDisabled()

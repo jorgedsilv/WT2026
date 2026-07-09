@@ -15,16 +15,14 @@ final class CodigoPostalViewModel {
     
     private var repository: CodigoPostalRepository!
     
-    //var state: State = .idle
-    
     /* search text */
     var search = ""
     
     /* results to present in List */
     var results: [CodigoPostal] = []
     
-    /* loading */
-    var isImporting = false
+    /* view state */
+    var viewState: ViewState = .idle
 
     // MARK: - Repository -
     
@@ -41,28 +39,23 @@ final class CodigoPostalViewModel {
     
     func importFromDatabase() async {
         
-        guard !isImporting
-        else {
-            return
-        }
-        
-        isImporting = true
-        //state = .importing
-        
-        defer {
-            isImporting = false
-            //state = .loaded
-        }
+        viewState = .preparing
         
         do {
             
+            viewState = .importing
+            
             try await repository.importIfNeeded()
+            
+            viewState = .loading
             
             try searchFromDatabase()
             
+            viewState = .loaded
+            
         } catch {
             
-            print(error)
+            viewState = .error(error.localizedDescription)
         }
     }
     
@@ -72,10 +65,3 @@ final class CodigoPostalViewModel {
         results = try repository.search(text: search)
     }
 }
-
-/*enum State {
-    case idle
-    case importing
-    case loaded
-    case error(Error)
-}*/
