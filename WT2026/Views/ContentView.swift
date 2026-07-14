@@ -32,10 +32,13 @@ struct ContentView: View {
                     VStack(spacing: 20) {
                         
                         Image(systemName: vm.viewState.symbol)
-                            .font(.system(size: 40))
+                            .font(.system(size: 42))
+                            .symbolEffect(.pulse)
                         
                         if vm.viewState.showsProgressView {
+                            
                             ProgressView()
+                                .controlSize(.large)
                         }
                         
                         Text(vm.viewState.title)
@@ -109,7 +112,7 @@ struct ContentView: View {
             prompt: "Pesquisa um código postal"
         )
         .autocorrectionDisabled()
-        .animation(.default, value: vm.search)
+        .animation(.default, value: vm.viewState)
         .onChange(of: vm.search) {
             
             guard vm.viewState.allowsSearching
@@ -118,11 +121,18 @@ struct ContentView: View {
             }
 
             
-            do {
-                try vm.searchFromDatabase()
-            } catch {
-                print("Erro na pesquisa")
-                print(error)
+            Task {
+                
+                do {
+                    
+                    await Task.yield()
+                    
+                    try vm.searchFromDatabase()
+                    
+                } catch {
+                    
+                    print(error)
+                }
             }
         }
         .task {

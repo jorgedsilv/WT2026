@@ -49,6 +49,8 @@ final class CodigoPostalViewModel {
             
             viewState = .loading
             
+            await Task.yield()
+            
             try searchFromDatabase()
             
             viewState = .loaded
@@ -62,6 +64,12 @@ final class CodigoPostalViewModel {
     // MARK: - Search -
     
     func searchFromDatabase() throws {
+        if viewState != .loading {
+            viewState = .loading
+        }
+        
         results = try repository.search(text: search)
+        
+        viewState = .loaded
     }
 }
