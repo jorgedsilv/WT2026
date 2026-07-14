@@ -15,25 +15,29 @@ final class CodigoPostalViewModel {
     
     private var repository: CodigoPostalRepository!
     
-    /* search text */
+    // MARK: - Properties -
+    
+    /// Texto da pesquisa
     var search = ""
     
-    /* results to present in List */
+    /// Resultados apresentados na List
     var results: [CodigoPostal] = []
     
-    /* view state */
+    /// Estado da View
     var viewState: ViewState = .idle
-
+    
     // MARK: - Repository -
     
-    func configure(
-        context: ModelContext
-    ) {
+    func configure(context: ModelContext) {
         
-        if repository == nil {
-            repository = CodigoPostalRepository(context: context)
+        guard repository == nil
+        else {
+            return
         }
+        
+        repository = CodigoPostalRepository(context: context)
     }
+
     
     // MARK: - Import -
     
@@ -64,6 +68,12 @@ final class CodigoPostalViewModel {
     // MARK: - Search -
     
     func searchFromDatabase() throws {
+        
+        guard repository != nil
+        else {
+            return
+        }
+        
         if viewState != .loading {
             viewState = .loading
         }

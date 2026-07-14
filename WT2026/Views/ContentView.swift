@@ -56,22 +56,22 @@ struct ContentView: View {
                         
                     } else {
                         
-                        List(vm.results) { code in
+                        List {
                             
-                            VStack(alignment: .leading, spacing: 2) {
+                            ForEach(vm.results) { code in
                                 
-                                HStack {
+                                VStack(alignment: .leading, spacing: 2) {
                                     
-                                    Text(code.codComplete)
-                                        .font(.headline)
-                                    
-                                    Text(code.desigPostal)
-                                        .foregroundStyle(.secondary)
-                                    
+                                    HStack {
+                                        
+                                        Text(code.codComplete)
+                                            .font(.headline)
+                                        
+                                        Text(code.desigPostal)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                                
                             }
-                            
                         }
                         .safeAreaInset(edge: .top) {
                             
@@ -136,6 +136,11 @@ struct ContentView: View {
             }
         }
         .task {
+            
+            guard vm.viewState == .idle
+            else {
+                return
+            }
             
             vm.configure(context: context)
             

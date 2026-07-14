@@ -14,21 +14,11 @@ final class CodigoPostalRepository {
     private let context: ModelContext
     private var cache: [CodigoPostal] = []
     
+    /// Cache otimizada para pesquisa
+    private var cachedSearch: [CachedCodigoPostal] = []
+    
     private let importer = CSVImporter()
     private let importedKey = "CSVImported"
-    
-    // MARK: - Sorts -
-    
-    private let defaultSort: [SortDescriptor<CodigoPostal>] = [
-        SortDescriptor(\.numCodPostal),
-        SortDescriptor(\.extCodPostal)
-    ]
-    
-    private let localSort: [SortDescriptor<CodigoPostal>] = [
-        SortDescriptor(\.desigPostal),
-        SortDescriptor(\.numCodPostal),
-        SortDescriptor(\.extCodPostal)
-    ]
     
     init(context: ModelContext) {
         self.context = context
@@ -85,6 +75,22 @@ final class CodigoPostalRepository {
         cache = try context.fetch(descriptor)
         
         print("loadCache: \(cache.count) codes")
+        
+        cachedSearch = cache.map { item in
+            
+            let code = item.codNoSeparator.textSearch
+            let local = item.desigPostal.textSearch
+            
+            return CachedCodigoPostal(
+                model: item,
+                baseCode: item.numCodPostal,
+                searchableCode: code,
+                searchableLocal: local,
+                searchableText: "\(code) \(local)"
+            )
+        }
+        
+        print("loadCache: \(cache.count) codes")
     }
     
     // MARK: - Search -
@@ -116,43 +122,43 @@ final class CodigoPostalRepository {
         
         let searchCode = searchText.textSearch
         
-        return cache.filter {
-            
-            $0.numCodPostal.hasPrefix(searchCode)
+        return cachedSearch.filter {
+            $0.baseCode.hasPrefix(searchCode)
             ||
-            $0.extCodPostal.hasPrefix(searchCode)
+            $0.model.extCodPostal.hasPrefix(searchCode)
             ||
-            $0.codNoSeparator.hasPrefix(searchCode)
+            $0.searchableCode.hasPrefix(searchCode)
         }
+        .map(\.model)
     }
     
     private func searchByLocal(_ searchText: String) throws -> [CodigoPostal] {
         
         let searchCode = searchText.textSearch
         
-        return cache.filter {
-            $0.desigPostal.textSearch.contains(searchCode)
-        }
+        return cachedSearch.filter {
+            $0.searchableLocal.contains(searchCode)
+        }.map(\.model)
     }
     
     private func searchByComposed(_ searchArray: [String]) throws -> [CodigoPostal] {
         
-        return cache.filter { item in
+        return cachedSearch.filter { item in
             
-            let complete = item.codNoSeparator.textSearch
-            let local = item.desigPostal.textSearch
-            
-            return searchArray.allSatisfy { t in
+            return searchArray.allSatisfy { term in
                 
-                let searchTerm = t.textSearch
+                let searchTerm = term.textSearch
                 
                 if searchTerm.first?.isNumber == true {
-                    return complete.contains(searchTerm)
+                    
+                    return item.searchableCode.contains(searchTerm)
+                    
                 } else {
-                    return local.contains(searchTerm)
+                    
+                    return item.searchableLocal.contains(searchTerm)
                 }
-                
             }
         }
+        .map(\.model)
     }
 }
