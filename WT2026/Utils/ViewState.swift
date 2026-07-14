@@ -82,23 +82,6 @@ extension ViewState {
         }
     }
     
-    /// Indica se a aplicação ainda não está pronta.
-    var isLoading: Bool {
-        
-        switch self {
-            
-        case .idle,
-                .preparing,
-                .importing,
-                .loading:
-            return true
-            
-        case .loaded,
-                .error:
-            return false
-        }
-    }
-    
     /// Indica se deve ser apresentado um ProgressView.
     var showsProgressView: Bool {
         
@@ -116,37 +99,9 @@ extension ViewState {
         }
     }
     
-    /// Indica se a interface já pode apresentar dados.
-    var isLoaded: Bool {
-        
-        if case .loaded = self {
-            return true
-        }
-        
-        return false
-    }
-    
-    /// Indica se ocorreu um erro.
-    var hasError: Bool {
-        
-        if case .error = self {
-            return true
-        }
-        
-        return false
-    }
-    
     /// Indica se a interface permite pesquisa.
     var allowsSearching: Bool {
-        
-        switch self {
-            
-        case .loaded:
-            return true
-            
-        default:
-            return false
-        }
+        self == .loaded
     }
 }
 
