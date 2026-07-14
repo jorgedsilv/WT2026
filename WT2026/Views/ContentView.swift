@@ -24,10 +24,12 @@ struct ContentView: View {
             Group {
                 
                 switch vm.viewState {
-                case .idle,
-                .preparing,
-                .importing,
-                .loading:
+                case .idle:
+                    EmptyView()
+                    
+                case .preparing,
+                        .importing,
+                        .loading:
                     
                     VStack(spacing: 20) {
                         

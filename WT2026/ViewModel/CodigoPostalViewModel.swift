@@ -28,14 +28,16 @@ final class CodigoPostalViewModel {
     
     // MARK: - Repository -
     
-    func configure(context: ModelContext) {
+    func configure(context: ModelContext) -> Bool {
         
         guard repository == nil
         else {
-            return
+            return false
         }
         
         repository = CodigoPostalRepository(context: context)
+        
+        return true
     }
 
     
@@ -43,26 +45,32 @@ final class CodigoPostalViewModel {
     
     func importFromDatabase() async {
         
-        viewState = .preparing
-        
         do {
+            viewState = .preparing
+            
+            // deixa o SwiftUI desenhar este estado
+            await Task.yield()
             
             viewState = .importing
             
             try await repository.importIfNeeded()
             
-            viewState = .loading
-            
-            await Task.yield()
-            
-            try searchFromDatabase()
-            
-            viewState = .loaded
+            try loadInitialData()
             
         } catch {
-            
             viewState = .error(error.localizedDescription)
         }
+    }
+    
+    // MARK: - Initial Load -
+    
+    private func loadInitialData() throws {
+        
+        viewState = .loading
+        
+        results = try repository.search(text: "")
+        
+        viewState = .loaded
     }
     
     // MARK: - Search -
@@ -74,12 +82,6 @@ final class CodigoPostalViewModel {
             return
         }
         
-        if viewState != .loading {
-            viewState = .loading
-        }
-        
         results = try repository.search(text: search)
-        
-        viewState = .loaded
     }
 }
