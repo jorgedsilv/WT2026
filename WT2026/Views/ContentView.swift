@@ -32,21 +32,24 @@ struct ContentView: View {
                     VStack(spacing: 20) {
                         
                         Image(systemName: vm.viewState.symbol)
-                            .font(.largeTitle)
+                            .font(.system(size: 40))
                         
-                        ProgressView()
+                        if vm.viewState.showsProgressView {
+                            ProgressView()
+                        }
                         
                         Text(vm.viewState.title)
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
                             .foregroundStyle(.secondary)
                     }
+                    .padding()
                     
                 case .loaded:
                     
                     if vm.results.isEmpty {
                         
-                        ContentUnavailableView.search(
-                            text: vm.search
-                        )
+                        ContentUnavailableView.search(text: vm.search)
                         
                     } else {
                         
@@ -91,7 +94,7 @@ struct ContentView: View {
                     ContentUnavailableView {
                         Label(
                             "Erro",
-                            systemImage: "xmark.circle"
+                            systemImage: vm.viewState.symbol
                         )
                     } description: {
                         Text(message)

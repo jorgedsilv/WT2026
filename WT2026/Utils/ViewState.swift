@@ -9,22 +9,30 @@ import Foundation
 
 enum ViewState: Equatable {
     
-    case idle            // acabou de criar o ViewModel
+    /// O ViewModel acabou de ser criado.
+    case idle
     
-    case preparing       // verifica SwiftData
+    /// A verificar o estado da base de dados.
+    case preparing
     
-    case importing       // download + importação CSV
+    /// A importar o CSV para SwiftData.
+    case importing
     
-    case loading         // carregar resultados para a lista
+    /// A carregar os dados para apresentação.
+    case loading
     
-    case loaded          // interface pronta
-
+    /// Interface pronta.
+    case loaded
     
+    /// Ocorreu um erro.
     case error(String)
 }
 
+// MARK: - Computed Properties -
+
 extension ViewState {
     
+    /// Texto apresentado ao utilizador.
     var title: String {
         
         switch self {
@@ -48,11 +56,8 @@ extension ViewState {
             return message
         }
     }
-}
-
-
-extension ViewState {
     
+    /// Símbolo SF Symbol associado ao estado.
     var symbol: String {
         
         switch self {
@@ -76,6 +81,59 @@ extension ViewState {
             return "xmark.circle"
         }
     }
+    
+    /// Indica se a aplicação ainda não está pronta.
+    var isLoading: Bool {
+        
+        switch self {
+            
+        case .idle,
+                .preparing,
+                .importing,
+                .loading:
+            return true
+            
+        case .loaded,
+                .error:
+            return false
+        }
+    }
+    
+    /// Indica se deve ser apresentado um ProgressView.
+    var showsProgressView: Bool {
+        
+        switch self {
+            
+        case .preparing,
+                .importing,
+                .loading:
+            return true
+            
+        case .idle,
+                .loaded,
+                .error:
+            return false
+        }
+    }
+    
+    /// Indica se a interface já pode apresentar dados.
+    var isLoaded: Bool {
+        
+        if case .loaded = self {
+            return true
+        }
+        
+        return false
+    }
+    
+    /// Indica se ocorreu um erro.
+    var hasError: Bool {
+        
+        if case .error = self {
+            return true
+        }
+        
+        return false
+    }
 }
-
 
