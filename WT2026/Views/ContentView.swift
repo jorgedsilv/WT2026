@@ -103,10 +103,20 @@ struct ContentView: View {
                 }
             }
         }
-        .searchable(text: $vm.search, prompt: "Pesquisa um código postal")
+        .searchableIf(
+            vm.viewState.allowsSearching,
+            text:  $vm.search,
+            prompt: "Pesquisa um código postal"
+        )
         .autocorrectionDisabled()
         .animation(.default, value: vm.search)
         .onChange(of: vm.search) {
+            
+            guard vm.viewState.allowsSearching
+            else {
+                return
+            }
+
             
             do {
                 try vm.searchFromDatabase()

@@ -135,5 +135,18 @@ extension ViewState {
         
         return false
     }
+    
+    /// Indica se a interface permite pesquisa.
+    var allowsSearching: Bool {
+        
+        switch self {
+            
+        case .loaded:
+            return true
+            
+        default:
+            return false
+        }
+    }
 }
 
