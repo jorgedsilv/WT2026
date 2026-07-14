@@ -12,6 +12,7 @@ import SwiftData
 final class CodigoPostalRepository {
     
     private let context: ModelContext
+    private var cache: [CodigoPostal] = []
     
     private let importer = CSVImporter()
     private let importedKey = "CSVImported"
@@ -37,13 +38,15 @@ final class CodigoPostalRepository {
     
     func importIfNeeded() async throws {
         
-        guard !UserDefaults.standard.bool(forKey: importedKey) else {
+        guard !UserDefaults.standard.bool(forKey: importedKey)
+        else {
+            try loadCache()
             return
         }
         
         let dto = try await importer.download()
         
-        print("importIfNeeded :: importing \(dto.count) codes...")
+        //print("importIfNeeded :: importing \(dto.count) codes...")
         
         for codigo in dto {
             
@@ -60,7 +63,28 @@ final class CodigoPostalRepository {
         
         UserDefaults.standard.set(true, forKey: importedKey)
         
-        print("importIfNeeded :: import complete")
+        //print("importIfNeeded :: import complete")
+        
+        try loadCache()
+    }
+    
+    private func loadCache() throws {
+        
+        guard cache.isEmpty
+        else {
+            return
+        }
+        
+        let descriptor = FetchDescriptor<CodigoPostal>(
+            sortBy: [
+                SortDescriptor(\.numCodPostal),
+                SortDescriptor(\.extCodPostal)
+            ]
+        )
+        
+        cache = try context.fetch(descriptor)
+        
+        print("loadCache: \(cache.count) codes")
     }
     
     // MARK: - Search -
@@ -70,7 +94,7 @@ final class CodigoPostalRepository {
         switch SearchType.analyze(text) {
         case .empty:
             
-            return try fetchAll()
+            return cache
             
         case .code(let codeSearch):
             
@@ -92,36 +116,28 @@ final class CodigoPostalRepository {
         
         let searchCode = searchText.textSearch
         
-        let all = try fetchAll()
-        
-        return all.filter { item in
+        return cache.filter {
             
-            let complete = item.codNoSeparator
-            
-            return
-                item.numCodPostal.hasPrefix(searchCode)
-                ||
-                item.extCodPostal.hasPrefix(searchCode)
-                ||
-                complete.hasPrefix(searchCode)
+            $0.numCodPostal.hasPrefix(searchCode)
+            ||
+            $0.extCodPostal.hasPrefix(searchCode)
+            ||
+            $0.codNoSeparator.hasPrefix(searchCode)
         }
     }
     
     private func searchByLocal(_ searchText: String) throws -> [CodigoPostal] {
         
-        return try fetch(
-            predicate: #Predicate<CodigoPostal> {
-                $0.desigPostal.localizedStandardContains(searchText)
-            },
-            sort: localSort
-        )
+        let searchCode = searchText.textSearch
+        
+        return cache.filter {
+            $0.desigPostal.textSearch.contains(searchCode)
+        }
     }
     
     private func searchByComposed(_ searchArray: [String]) throws -> [CodigoPostal] {
         
-        let all = try fetchAll()
-        
-        return all.filter { item in
+        return cache.filter { item in
             
             let complete = item.codNoSeparator.textSearch
             let local = item.desigPostal.textSearch
@@ -138,24 +154,5 @@ final class CodigoPostalRepository {
                 
             }
         }
-    }
-    
-    // MARK: - Fetch -
-    
-    private func fetch(
-        predicate: Predicate<CodigoPostal>? = nil,
-        sort: [SortDescriptor<CodigoPostal>]? = nil
-    ) throws -> [CodigoPostal] {
-        
-        let descriptor = FetchDescriptor<CodigoPostal>(
-            predicate: predicate,
-            sortBy: sort ?? defaultSort
-        )
-        
-        return try context.fetch(descriptor)
-    }
-    
-    private func fetchAll() throws -> [CodigoPostal] {
-        try fetch()
     }
 }
